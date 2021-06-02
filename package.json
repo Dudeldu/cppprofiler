@@ -1,0 +1,174 @@
+{
+  "name": "cppprofiler",
+  "displayName": "CppProfiler",
+  "description": "Cpp Profiler - allows to profile your cpp code utilizing the perf tool.",
+  "publisher": "Dudeldu",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dudeldu/cppprofiler.git"
+  },
+  "icon": "resources/icon_small.png",
+  "engines": {
+    "vscode": "^1.56.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "CPP",
+    "Profiler",
+    "Perf",
+    "VTune",
+    "Performance"
+  ],
+  "activationEvents": [
+    "onLanguage:cpp",
+    "onView:perfprofile"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cppprofiler.show_hotspots",
+        "title": "Only show information for current file",
+        "icon": {
+          "light": "resources/light/document.svg",
+          "dark": "resources/dark/document.svg"
+        }
+      },
+      {
+        "command": "cppprofiler.load_profile",
+        "title": "Load perf recorded profiling data",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "cppprofiler.disassemble",
+        "title": "Disassemble executable"
+      },
+      {
+        "command": "cppprofiler.switch_event",
+        "title": "Switch between different recorded events"
+      },
+      {
+        "command": "cppprofiler.jump_to_source",
+        "title": "Jump to Source"
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "profile",
+        "required": [
+          "program"
+        ],
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "program"
+          },
+          "additionalArguments": {
+            "type": "array",
+            "description": "commandline arguments."
+          },
+          "setupCmds": {
+            "type": "array",
+            "description": "Setup commands will be joined with && and prepended to the task execution"
+          }
+        }
+      }
+    ],
+    "configuration": [
+      {
+        "title": "CppProfiler",
+        "properties": {
+          "cppprofiler.output": {
+            "type": "string",
+            "default": "cppprofiler",
+            "description": "Folder for storing Perf output data."
+          },
+          "cppprofiler.perf.flags": {
+            "type": "string",
+            "default": "-N -B --all-user --user-callchains",
+            "description": "Flags for perf record in addition to '-g'. Record various events with -e flag (e.g.: `-e L1-dcache-load-misses`, see `perf list` for more)."
+          },
+          "cppprofiler.objdump.flags": {
+            "type": "string",
+            "default": "--no-show-raw-insn -l --visualize-jumps --section=.text -C",
+            "description": "Flags for disassembling with objdump. Only --disassemble will atomatically be used."
+          },
+          "cppprofiler.executable": {
+            "type": "string",
+            "default": "",
+            "description": "The executable which should be disassembled (Only required, if disassembling is used WITHOUT profiling)."
+          },
+          "cppprofiler.proportionLevel": {
+            "type": "string",
+            "default": "file",
+            "oneOf": [
+              "file",
+              "program"
+            ],
+            "description": "Visualize the proportion of event in relation to either all events happening in this file or the complete program."
+          }
+        }
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "perfprofile",
+          "name": "Perf Profile"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "cppprofiler.show_hotspots",
+          "when": "view == perfprofile",
+          "group": "navigation"
+        },
+        {
+          "command": "cppprofiler.load_profile",
+          "when": "view == perfprofile",
+          "group": "navigation"
+        },
+        {
+          "command": "cppprofiler.switch_event",
+          "when": "view == perfprofile"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cppprofiler.jump_to_source",
+          "when": "view == perfprofile"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.4",
+    "@types/node": "^12.20.13",
+    "@types/vscode": "^1.56.0",
+    "@typescript-eslint/eslint-plugin": "^4.14.1",
+    "@typescript-eslint/parser": "^4.14.1",
+    "eslint": "^7.19.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.2.1",
+    "typescript": "^4.1.3",
+    "vscode-test": "^1.5.0"
+  }
+}
