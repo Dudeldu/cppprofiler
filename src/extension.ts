@@ -29,11 +29,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.commands.registerCommand('cppprofiler.load_profile', () => {
 		vscode.window.withProgress(
-			{ location: vscode.ProgressLocation.Notification, cancellable: false, title: "Loading perf data" },
-			async (progress, token) => {
-				let perfData = await parsePerfRecord(currentEvent);
-				profileTreeViewer.refresh(perfData);
-				if (perfData) { disassembler.updateExecutable(perfData.executable); }
+			{ location: vscode.ProgressLocation.Notification, cancellable: true, title: "Loading perf data" },
+			(progress, token) => {
+				return parsePerfRecord(currentEvent, progress, token).then((perfData) => {
+					profileTreeViewer.refresh(perfData);
+					if (perfData) { disassembler.updateExecutable(perfData.executable); }
+				});
 			}
 		);
 	});

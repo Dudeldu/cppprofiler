@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, createReadStream, readdirSync } from 'fs';
-import { ChildProcess, spawn, execSync } from 'child_process';
+import { existsSync, readFileSync, createReadStream, readdirSync, statSync } from 'fs';
+import { ChildProcess, spawn } from 'child_process';
 import * as vscode from 'vscode';
 import * as path from 'path';
 
@@ -34,12 +34,18 @@ class Addr2LineWithCache {
     private executable: string;
     private addr2lineProcess: ChildProcess;
     private nextCallback: (a: string) => void = () => { };
+    private error: (err: any) => void = () => { };
 
     constructor(exec: string) {
         this.executable = exec;
         this.addr2lineProcess = spawn("addr2line", ["-f", "--inlines", "-C", "-e", this.executable],
-            { cwd: vscode.workspace.rootPath, stdio: ['pipe', 'pipe', 'ignore'] });
+            { cwd: vscode.workspace.rootPath, stdio: ['pipe', 'pipe', 'pipe'] });
         this.addr2lineProcess.stdout?.on("data", (data) => this.nextCallback(data.toString()));
+        this.addr2lineProcess.stderr?.on("data", this.error);
+
+        this.addr2lineProcess.on("error", this.error);
+        this.addr2lineProcess.on("disconnect", this.error);
+        this.addr2lineProcess.on("close", this.error);
     };
 
     async addr2line(addr: number): Promise<Addr2LineInfo[]> {
@@ -52,11 +58,10 @@ class Addr2LineWithCache {
                 this.nextCallback = (data: string) => {
                     resolve(Addr2LineInfo.buildAddr2LineInfos(data, addr));
                 };
+                this.error = (err: any) => {
+                    reject(err);
+                };
             });
-            // let stdout = execSync(`addr2line -f -s --inlines -C -e ${this.executable} 0x${addr.toString(16)}`, { cwd: vscode.workspace.rootPath }).toString();
-            // let info = new Addr2LineInfo(stdout.trim(), addr);
-            // this.cache.set(addr, info);
-            // return info;
         }
     }
 
@@ -102,7 +107,7 @@ export function getPossibleEventsFromFs(): string[] {
     return possibleEvents;
 }
 
-export async function parsePerfRecord(event?: string): Promise<PerfEventData | undefined> {
+export async function parsePerfRecord(event?: string, progress? : vscode.Progress<{ message?: string; increment?: number }>, token?: vscode.CancellationToken): Promise<PerfEventData | undefined> {
     let workspaceFolder = vscode.workspace.rootPath;
     if (!workspaceFolder) {
         return;
@@ -118,6 +123,8 @@ export async function parsePerfRecord(event?: string): Promise<PerfEventData | u
         }
         event = possibleEvents[0];
     }
+    progress?.report({increment: 0, message: "Loading perf data - Memory Mappings loading..."});
+
     const mmapEvents = readFileSync(`${workspaceFolder}/${config.get("output")}/mmap-events.dump`, 'utf8');
     const mmapResolver = new MMapResolver();
     let executable: string | undefined;
@@ -129,12 +136,18 @@ export async function parsePerfRecord(event?: string): Promise<PerfEventData | u
         }
     }
 
+    progress?.report({increment: 10, message: "Loading perf data - Events loading..."});
+
     if (!executable) {
         return;
     }
-
+    const fileSize = statSync(`${workspaceFolder}/${config.get("output")}/perf.data.${event}.dump`).size;
     const dataStream = createReadStream(`${workspaceFolder}/${config.get("output")}/perf.data.${event}.dump`, 'utf8');
     const addr2line = new Addr2LineWithCache(executable);
+    token?.onCancellationRequested(()=>{
+        addr2line.kill();
+        dataStream.close();
+    });
     const perfEventData = new PerfEventData(mmapResolver, addr2line, executable);
 
     let data: string;
@@ -143,7 +156,9 @@ export async function parsePerfRecord(event?: string): Promise<PerfEventData | u
             data += chunk;
             dataStream.pause();
             while (data.includes("\n\n")) {
-                await perfEventData.addEvents(data.split("\n\n", 1)[0]);
+                let eventString = data.split("\n\n", 1)[0];
+                await perfEventData.addEvents(eventString);
+                progress?.report({increment: (eventString.length / fileSize) * 90, message: "Loading perf data - Events loading..."});
                 data = data.substring(data.indexOf("\n\n") + 2);
             }
             dataStream.resume();
@@ -156,6 +171,7 @@ export async function parsePerfRecord(event?: string): Promise<PerfEventData | u
         });
     });
     addr2line.kill();
+
     if (perfEventData.nrEventsInExecutable < 10) {
         vscode.window.showWarningMessage("Less than 10 events for your application - Consider extending the benchmarking time for example by doing multiple runs");
     }
