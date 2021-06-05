@@ -33,7 +33,12 @@ export class DisassemblyProvider implements vscode.TextDocumentContentProvider {
         }
 
         let functionName = uri.path;
-        return callObjDump(functionName, program);
+        return callObjDump(functionName, program).then((content) => {
+            if (content === "") {
+				vscode.window.showErrorMessage("Symbol not found - either it doesn't exist or was optimized away");
+			}
+            return content;
+        });
     }
 }
 

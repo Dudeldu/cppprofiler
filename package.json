@@ -55,8 +55,12 @@
         "title": "Switch between different recorded events"
       },
       {
-        "command": "cppprofiler.jump_to_source",
-        "title": "Jump to Source"
+        "command": "cppprofiler.jump_to_cpp_source",
+        "title": "Jump to C++ Source"
+      },
+      {
+        "command": "cppprofiler.jump_to_asm_source",
+        "title": "Jump to ASM Source"
       }
     ],
     "taskDefinitions": [
@@ -107,12 +111,12 @@
           },
           "cppprofiler.proportionLevel": {
             "type": "string",
-            "default": "file",
+            "default": "program",
             "oneOf": [
               "file",
               "program"
             ],
-            "description": "Visualize the proportion of event in relation to either all events happening in this file or the complete program."
+            "description": "Visualize the proportion of event in relation to either all events happening in this file (`file`) or the complete program (`program`)."
           }
         }
       }
@@ -144,7 +148,11 @@
       ],
       "view/item/context": [
         {
-          "command": "cppprofiler.jump_to_source",
+          "command": "cppprofiler.jump_to_cpp_source",
+          "when": "view == perfprofile"
+        },
+        {
+          "command": "cppprofiler.jump_to_asm_source",
           "when": "view == perfprofile"
         }
       ]

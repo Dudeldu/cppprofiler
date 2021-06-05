@@ -72,7 +72,7 @@ class FunctionCallView extends vscode.TreeItem {
       "label": functionCall.getSampleProportion() + " " + functionCall.info.symbol,
       "highlights": [[0, functionCall.getSampleProportion().length]]
     }, collapsibleState);
-    this.tooltip = `${this.functionCall.info.symbol}    ${this.functionCall.info.src.path}`;
+    this.tooltip = `${this.functionCall.info.symbol}    ${this.functionCall.info.src.path}:${this.functionCall.info.line}`;
     this.description = `${this.functionCall.info.filename}:${this.functionCall.info.line}`;
   }
 }

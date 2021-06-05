@@ -43,14 +43,21 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('cppprofiler.show_hotspots', async () => {
 		await profileTreeViewer.applyDecoration();
 	});
-	vscode.commands.registerCommand('cppprofiler.jump_to_source', async (functionCall : FunctionCall) => {
+	vscode.commands.registerCommand('cppprofiler.jump_to_cpp_source', async (functionCall : FunctionCall) => {
 		let doc = await vscode.workspace.openTextDocument(functionCall.info.src);
 		let editor = await vscode.window.showTextDocument(doc);
 		let line = functionCall.info.line - 1;
 		editor.selections = [new vscode.Selection(line, 0, line, 0)];
         var range = new vscode.Range(line, 0, line, 0);
         editor.revealRange(range);
+	});
 
+	vscode.commands.registerCommand('cppprofiler.jump_to_asm_source', async (functionCall : FunctionCall) => {
+		let doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`disassemble:${functionCall.info.symbol}`));
+		if (doc.getText() === "") {
+			return;
+		}
+		await vscode.window.showTextDocument(doc);
 	});
 
 	vscode.commands.registerCommand('cppprofiler.switch_event', async () => {
@@ -68,7 +75,6 @@ export function activate(context: vscode.ExtensionContext) {
 			profileTreeViewer.removeDecoration();
 			let doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`disassemble:${symbol}`));
 			if (doc.getText() === "") {
-				vscode.window.showErrorMessage("Symbol not found");
 				return;
 			}
 			await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });

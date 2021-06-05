@@ -33,15 +33,16 @@ async function decorateAsm(editor: vscode.TextEditor, perfData: PerfEventData): 
 function finalizeDecorationFromLineMap(editor: vscode.TextEditor, linesMap: Map<number, number>, perfData: PerfEventData): vscode.TextEditorDecorationType {
     let decorationsArray: vscode.DecorationOptions[] = [];
     let totalLines = [...linesMap.values()].reduce((x, y) => x + y);
+    let lineCount = (editor.document.lineCount < 50 ? editor.document.lineCount : 50);
     if (vscode.workspace.getConfiguration('cppprofiler').get('proportionLevel') === "program") {
         // calculate the events in proportion to the total program instead for the open file
         totalLines = perfData.nrEventsInExecutable;
+        lineCount = 50;
     }
     for (let [line, nrSamples] of linesMap.entries()) {
         if (line > editor.document.lineCount || line <= 0) {
             continue;
         }
-        let lineCount = (editor.document.lineCount < 50 ? editor.document.lineCount : 50);
         let linelenght = editor.document.lineAt(line - 1).text.length;
         decorationsArray.push({
             "range": new vscode.Range(line - 1, linelenght, line - 1, linelenght),
