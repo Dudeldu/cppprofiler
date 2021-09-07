@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, createReadStream, readdirSync, statSync } from 'fs';
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess, spawn, execSync } from 'child_process';
 import * as vscode from 'vscode';
 import * as path from 'path';
 
@@ -72,9 +72,15 @@ class Addr2LineWithCache {
 
 class MMapResolver {
     private mmap: Map<string, number> = new Map();
+    private pie: Map<string, boolean> = new Map();
 
     constructor() {
     };
+
+    static isPositionIndependentExecutable(filename: string): boolean {
+        let fileHeaders = execSync(`objdump -f ${filename}`);
+        return fileHeaders.includes("DYNAMIC");
+    }
 
     addMMapEvent(line: string) {
         if (!line.includes("PERF_RECORD_MMAP2")) {
@@ -88,6 +94,17 @@ class MMapResolver {
     }
 
     ipToOffset(ip: number, file: string): number {
+        if (!this.pie.has(file)){
+            this.pie.set(file, MMapResolver.isPositionIndependentExecutable(file));
+        }
+        /*
+         * using the relative address is only required if the executable is PIE (-fPIE, probably already default configuration)
+         * `-fno-pie` can skip this whole address resolution via the mmap events 
+         */
+        if (!this.pie.get(file))
+        {
+            return ip;
+        }
         let offset = this.mmap.get(file);
         if (!offset) {
             return 0;
