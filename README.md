@@ -1,8 +1,8 @@
 # CppProfiler
 ![Icon](resources/icon_small.png)
 
-Cpp Profiler - allows to profile your cpp code utilizing the perf tool.  
-Perf allows to track all sorts of different hardware events, reaching from cpu-cycles, over page or TLB misses to all kind of cache events and even further. These metrics can find bottlenecks in your code, cache inefficient structures or just visualize the program flow, by visualizing the events and attributing them to the corresponding line in your code - even down to assembler instruction level.
+Cpp Profiler - allows profiling your cpp code utilizing the perf tool.  
+Perf allows tracking all sorts of different hardware events, reaching from cpu-cycles, over page or TLB misses to all kind of cache events and even further. These metrics can find bottlenecks in your code, cache inefficient structures or just visualize the program flow, by visualizing the events and attributing them to the corresponding line in your code - even down to assembler instruction level.
 
 ## Features
 
@@ -18,7 +18,8 @@ Perf allows to track all sorts of different hardware events, reaching from cpu-c
 
 > Objdump and Addr2line will likely be already installed on your machine. And there is even a good chance, that the same applies to perf as well.
 
-Furthermore for perf to be able to record events correctly, the kernel paranoid level has to be configured. This can be done by writing the level into `/proc/sys/kernel/perf_event_paranoid`.
+Furthermore for perf to be able to record events correctly, the kernel paranoid level has to be configured. 
+This can be done by writing the level into `/proc/sys/kernel/perf_event_paranoid`.  
 To reduce the level to its minimum (and therefore record as much events as possible) run the following:
 ```
 sudo sh -c "echo -1 > /proc/sys/kernel/perf_event_paranoid"
@@ -42,7 +43,7 @@ sudo sh -c "echo -1 > /proc/sys/kernel/perf_event_paranoid"
 
 4. Now you can annotate the current open editors or just go through the tree view
 
-> Disassembling doesn't require to run the perf task before. THereforeyou can just disassemble any of your binaries at any time.
+> Disassembling doesn't require to run the perf task before. Therefore you can just disassemble any of your binaries at any time.
 
 ## Extension Settings
 
